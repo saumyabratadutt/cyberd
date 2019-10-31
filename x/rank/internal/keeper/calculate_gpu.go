@@ -6,7 +6,7 @@ import (
 	"github.com/cybercongress/cyberd/x/link"
 	"github.com/cybercongress/cyberd/x/rank/internal/types"
 	"github.com/tendermint/tendermint/libs/log"
-
+	"reflect"
 	"math"
 	"sync"
 	"time"
@@ -31,16 +31,26 @@ func calculateRankGPU(ctx *types.CalculationContext, logger log.Logger) []float6
 	outLinks := ctx.GetOutLinks()
 
 	cidsCount := ctx.GetCidsCount()
-	linksCount := uint64(0)
 	stakesCount := len(ctx.GetStakes())
+
+	linksCount := uint64(0)
+
+	linksCount2 := uint64(0)
 
 	rank := make([]float64, cidsCount)
 	inLinksCount := make([]uint32, cidsCount)
 	outLinksCount := make([]uint32, cidsCount)
 
+	inLinksCount2 := make([]uint32, cidsCount)
+	outLinksCount2 := make([]uint32, cidsCount)
+
 	inLinksOuts := make([]uint64, 0)
 	inLinksUsers := make([]uint64, 0)
 	outLinksUsers := make([]uint64, 0)
+
+	inLinksOuts2 := make([]uint64, 0)
+	inLinksUsers2 := make([]uint64, 0)
+	outLinksUsers2 := make([]uint64, 0)
 
 	// todo reduce size of stake by passing only participating in linking stakes.
 	// todo need to investigate why GetStakes returns accounts with one missed index, think this is goes from some module
@@ -48,6 +58,8 @@ func calculateRankGPU(ctx *types.CalculationContext, logger log.Logger) []float6
 	for acc, stake := range ctx.GetStakes() {
 		stakes[uint64(acc)] = stake
 	}
+
+	// ___________________________________________________
 
 	ch := make(chan int64, 100000)
 	var wg sync.WaitGroup
@@ -104,6 +116,59 @@ func calculateRankGPU(ctx *types.CalculationContext, logger log.Logger) []float6
 	// waiting for a while all workers will finish work
 	wg.Wait()
 
+	// ___________________________________________________
+
+	for i := int64(0); i < cidsCount; i++ {
+
+		if inLinks, sortedCids, ok := ctx.GetSortedInLinks(link.CidNumber(i)); ok {
+			for _, cid := range sortedCids {
+				inLinksCount2[i] += uint32(len(inLinks[cid]))
+				for acc := range inLinks[cid] {
+					inLinksOuts2 = append(inLinksOuts2, uint64(cid))
+					inLinksUsers2 = append(inLinksUsers2, uint64(acc))
+				}
+			}
+			linksCount2 += uint64(inLinksCount2[i])
+		}
+
+		if outLinks, ok := outLinks[link.CidNumber(i)]; ok {
+			for _, accs := range outLinks {
+				outLinksCount2[i] += uint32(len(accs))
+				for acc := range accs {
+					outLinksUsers2 = append(outLinksUsers2, uint64(acc))
+				}
+			}
+		}
+	}
+
+	// ___________________________________________________
+
+	if (!reflect.DeepEqual(linksCount, linksCount2)) {
+		logger.Error("linkCount not equal")
+	}
+
+	if (!reflect.DeepEqual(inLinksCount,inLinksCount2)) {
+		logger.Error("inLinksCount not equal")
+	}
+
+	if (!reflect.DeepEqual(outLinksCount, outLinksCount2)) {
+		logger.Error("outLinksCount not equal")
+	}
+
+	if (!reflect.DeepEqual(inLinksOuts, inLinksOuts2)) {
+		logger.Error("inLinksOuts2 not equal")
+	}
+
+	if (!reflect.DeepEqual(inLinksUsers, inLinksUsers2)) {
+		logger.Error("inLinksUsers not equal")
+	}
+
+	if (!reflect.DeepEqual(outLinksUsers, outLinksUsers2)) {
+		logger.Error("outLinksUsers not equal")
+	}
+
+	// ___________________________________________________
+
 	/* Convert to C types */
 	cStakes := (*C.ulong)(&stakes[0])
 
@@ -135,3 +200,4 @@ func calculateRankGPU(ctx *types.CalculationContext, logger log.Logger) []float6
 
 	return rank
 }
+
