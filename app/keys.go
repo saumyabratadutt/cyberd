@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
+	"github.com/litvintech/cosmos-paychan/paychan"
 )
 
 type cyberdAppDbKeys struct {
@@ -33,6 +34,7 @@ type cyberdAppDbKeys struct {
 	accBandwidth   *sdk.KVStoreKey
 	blockBandwidth *sdk.KVStoreKey
 	mint           *sdk.KVStoreKey
+	paychan        *sdk.KVStoreKey
 }
 
 func NewCyberdAppDbKeys() cyberdAppDbKeys {
@@ -49,6 +51,7 @@ func NewCyberdAppDbKeys() cyberdAppDbKeys {
 		params:   sdk.NewKVStoreKey(params.StoreKey),
 		tParams:  sdk.NewTransientStoreKey(params.TStoreKey),
 		mint:     sdk.NewKVStoreKey(mint.StoreKey),
+		paychan:  sdk.NewKVStoreKey(paychan.StoreKey),
 
 		cidNum:         sdk.NewKVStoreKey("cid_index"),
 		cidNumReverse:  sdk.NewKVStoreKey("cid_index_reverse"),
@@ -62,7 +65,7 @@ func NewCyberdAppDbKeys() cyberdAppDbKeys {
 func (k cyberdAppDbKeys) GetStoreKeys() []*sdk.KVStoreKey {
 	return []*sdk.KVStoreKey{
 		k.main, k.acc, k.cidNum, k.cidNumReverse, k.links, k.rank, k.stake, k.supply, k.gov,
-		k.slashing, k.params, k.distr, k.fees, k.accBandwidth, k.blockBandwidth, k.mint,
+		k.slashing, k.params, k.distr, k.fees, k.accBandwidth, k.blockBandwidth, k.mint, k.paychan,
 	}
 }
 

@@ -22,6 +22,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
+	"github.com/litvintech/cosmos-paychan/paychan"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/abci/version"
 	cmn "github.com/tendermint/tendermint/libs/common"
@@ -61,7 +62,7 @@ var (
 		crisis.AppModuleBasic{},
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
-
+		paychan.AppModuleBasic{},
 		link.AppModuleBasic{},
 		bw.AppModuleBasic{},
 		rank.AppModuleBasic{},
@@ -108,6 +109,7 @@ type CyberdApp struct {
 	paramsKeeper       params.Keeper
 	crisisKeeper       crisis.Keeper
 	accBandwidthKeeper bw.Keeper
+	paychanKeeper      paychan.Keeper
 
 	// cyberd storage
 	// todo: move all processes with this storages to another file
@@ -181,6 +183,8 @@ func NewCyberdApp(logger log.Logger, db dbm.DB, traceStore io.Writer, height int
 	app.accBandwidthKeeper = bw.NewAccBandwidthKeeper(dbKeys.accBandwidth, &bandwidthSubspace)
 	app.blockBandwidthKeeper = bw.NewBlockSpentBandwidthKeeper(dbKeys.blockBandwidth)
 
+	app.paychanKeeper = paychan.NewKeeper(app.cdc, dbKeys.paychan, bankKeeper.Keeper)
+
 	// register the proposal types
 	govRouter := gov.NewRouter().
 		AddRoute(gov.RouterKey, gov.ProposalHandler).
@@ -226,7 +230,7 @@ func NewCyberdApp(logger log.Logger, db dbm.DB, traceStore io.Writer, height int
 		mint.NewAppModule(app.mintKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.distrKeeper, app.accountKeeper, app.supplyKeeper),
-
+		paychan.NewAppModule(app.paychanKeeper),
 		bw.NewAppModule(app.accBandwidthKeeper, app.blockBandwidthKeeper),
 		link.NewAppModule(app.cidNumKeeper, app.linkIndexedKeeper, app.accountKeeper),
 		rank.NewAppModule(app.rankStateKeeper),
@@ -239,7 +243,7 @@ func NewCyberdApp(logger log.Logger, db dbm.DB, traceStore io.Writer, height int
 	app.MountStores(
 		dbKeys.main, dbKeys.acc, dbKeys.cidNum, dbKeys.cidNumReverse, dbKeys.links, dbKeys.rank, dbKeys.stake,
 		dbKeys.slashing, dbKeys.gov, dbKeys.params, dbKeys.distr, dbKeys.fees, dbKeys.accBandwidth,
-		dbKeys.blockBandwidth, dbKeys.tParams, dbKeys.tStake, dbKeys.mint, dbKeys.supply,
+		dbKeys.blockBandwidth, dbKeys.tParams, dbKeys.tStake, dbKeys.mint, dbKeys.supply, dbKeys.paychan,
 	)
 
 	app.SetInitChainer(app.applyGenesis)
