@@ -29,7 +29,7 @@ Software: Docker, Ubuntu 16.04/18.04 LTS
 
 *Cyberd runs well on comsumer grade cards like Geforce GTX 1070, but expecting load growth we advise to use Error Correction compatible cards from Tesla or Quadro families.
 
-But, of cource, hardware is your onw choise and tecnically it migth be possible to run the chain on "even - 1 CUDA core gpu", but, you should be aware of stabilty and a decline in calculation speed.
+But, of cource, hardware is your own choice and technically it might be possible to run the chain on "even - 1 CUDA core gpu", but, you should be aware of stabilty and a decline in calculation speed.
 
 ## Validator setup
 
